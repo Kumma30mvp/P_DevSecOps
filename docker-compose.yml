@@ -1,0 +1,8 @@
+services:
+  api:
+    build: .
+    image: devsecops-api:latest
+    container_name: devsecops-api
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
