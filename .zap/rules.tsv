@@ -1,0 +1,22 @@
+# OWASP ZAP Baseline - configuracion de reglas
+# Formato (separado por TABS):  <ruleId>	<WARN|FAIL|IGNORE|INFO>	<comentario opcional>
+#
+# Objetivo academico: que el job de DAST sea ESTABLE y recolecte evidencia
+# sin abortar por alertas. Bajamos a WARN las alertas tipicas de una API
+# minima sin endurecer (no son el foco del MVP, pero quedan documentadas
+# en el reporte como hallazgos).
+#
+# Cabeceras de seguridad ausentes (esperado en el MVP):
+10015	WARN	(Incomplete or No Cache-control Header Set)
+10020	WARN	(Missing Anti-clickjacking Header / X-Frame-Options)
+10021	WARN	(X-Content-Type-Options Header Missing)
+10035	WARN	(Strict-Transport-Security Header Not Set)
+10036	WARN	(Server Leaks Version Information)
+10037	WARN	(Server Leaks Information via X-Powered-By)
+10038	WARN	(Content Security Policy (CSP) Header Not Set)
+10049	WARN	(Storable and Cacheable Content)
+10063	WARN	(Permissions Policy Header Not Set)
+10096	WARN	(Timestamp Disclosure)
+10110	WARN	(Dangerous JS Functions)
+90004	WARN	(Insufficient Site Isolation Against Spectre Vulnerability)
+90005	WARN	(Sec-Fetch headers)
