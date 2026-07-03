@@ -7,7 +7,7 @@ y para servir de insumo a un análisis **STRIDE** y a **DefectDojo**.
 
 - Almacenamiento **en memoria** (sin base de datos).
 - **Sin autenticación real** (decisión de MVP).
-- Validación de entradas con **Pydantic**.
+- Validación de entradas con **Pydantic**..
 
 ## Estructura
 
