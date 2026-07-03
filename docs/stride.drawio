@@ -1,0 +1,114 @@
+<mxfile host="app.diagrams.net" modified="2026-07-03T00:00:00.000Z" agent="DevSecOps" version="24.7.7" type="device">
+  <diagram id="stride-devsecops" name="STRIDE - DevSecOps MVP">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1150" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ================= TITULO ================= -->
+        <mxCell id="title" value="Modelo de amenazas STRIDE - API DevSecOps (FastAPI + Docker + GitHub Actions + DefectDojo)&#10;Arquitectura REAL: almacenamiento en memoria (sin base de datos). PostgreSQL = arquitectura objetivo para produccion (fuera del MVP)." style="text;html=1;align=center;verticalAlign=middle;fontStyle=1;fontSize=14;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1520" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ================= TRUST BOUNDARIES ================= -->
+        <mxCell id="tb_client" value="Frontera de confianza: Cliente / Internet (NO confiable)" style="rounded=1;dashed=1;dashPattern=8 8;strokeColor=#B85450;fillColor=none;verticalAlign=top;fontColor=#B85450;fontStyle=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="120" width="240" height="620" as="geometry" />
+        </mxCell>
+        <mxCell id="tb_github" value="Frontera de confianza: GitHub (SCM + Actions CI/CD)" style="rounded=1;dashed=1;dashPattern=8 8;strokeColor=#6C8EBF;fillColor=none;verticalAlign=top;fontColor=#6C8EBF;fontStyle=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="320" y="100" width="560" height="380" as="geometry" />
+        </mxCell>
+        <mxCell id="tb_runtime" value="Frontera de confianza: Runtime del contenedor (Docker host)" style="rounded=1;dashed=1;dashPattern=8 8;strokeColor=#82B366;fillColor=none;verticalAlign=top;fontColor=#82B366;fontStyle=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="320" y="520" width="560" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="tb_ddojo" value="Frontera de confianza: Gestion de vulnerabilidades (DefectDojo)" style="rounded=1;dashed=1;dashPattern=8 8;strokeColor=#9673A6;fillColor=none;verticalAlign=top;fontColor=#9673A6;fontStyle=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="120" width="360" height="300" as="geometry" />
+        </mxCell>
+
+        <!-- ================= ACTORES ================= -->
+        <mxCell id="dev" value="Desarrollador&#10;(externo)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="110" y="160" width="60" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="client" value="Cliente HTTP&#10;(usuario / atacante)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="110" y="560" width="60" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- ================= GITHUB / CI-CD ================= -->
+        <mxCell id="repo" value="Repositorio GitHub&#10;(codigo + workflow)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="360" y="150" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="pipeline" value="GitHub Actions Pipeline (CI/CD)&#10;1 Validate - 2 Build - 3 Gitleaks&#10;4 Trivy FS - 5 Semgrep&#10;6 Trivy Image - 7 OWASP ZAP&#10;8 Test - 9 Security Summary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="540" y="140" width="300" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="image" value="Imagen Docker&#10;devsecops-api:latest&#10;(artifact image.tar)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="360" y="300" width="160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="reports" value="Reportes / Artifacts&#10;gitleaks, trivy-fs, semgrep,&#10;trivy-image, zap, summary" style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="300" width="200" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- ================= RUNTIME CONTENEDOR ================= -->
+        <mxCell id="fastapi" value="FastAPI App (proceso)&#10;GET / /health /items&#10;POST /items&#10;GET /admin/status (SIN auth)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="360" y="580" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="memory" value="Almacenamiento&#10;EN MEMORIA&#10;(lista Python, sin BD)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="650" y="585" width="150" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ================= DEFECTDOJO ================= -->
+        <mxCell id="ddojo" value="DefectDojo&#10;(gestion y correlacion&#10;de hallazgos)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1250" y="180" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="analyst" value="Analista de&#10;seguridad" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1310" y="310" width="60" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ================= FLUJOS DE DATOS (con etiquetas STRIDE) ================= -->
+        <mxCell id="f_dev_repo" value="git push / PR&#10;[S, T, R]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#B85450;" edge="1" parent="1" source="dev" target="repo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f_repo_pipe" value="trigger push/PR" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#6c8ebf;" edge="1" parent="1" source="repo" target="pipeline">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f_pipe_img" value="docker build" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#6c8ebf;" edge="1" parent="1" source="pipeline" target="image">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f_pipe_reports" value="genera reportes&#10;[T, I]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#d6b656;" edge="1" parent="1" source="pipeline" target="reports">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f_reports_ddojo" value="import scan results&#10;[T, I]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#9673a6;" edge="1" parent="1" source="reports" target="ddojo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f_ddojo_analyst" value="revisa / prioriza" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#9673a6;" edge="1" parent="1" source="ddojo" target="analyst">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f_client_api" value="HTTP requests&#10;[S, T, I, D]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#B85450;fontStyle=1;" edge="1" parent="1" source="client" target="fastapi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f_api_mem" value="lee / escribe items&#10;[T, R, I]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#82b366;" edge="1" parent="1" source="fastapi" target="memory">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f_img_api" value="docker run" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#82b366;" edge="1" parent="1" source="image" target="fastapi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f_zap_api" value="OWASP ZAP DAST&#10;escaneo dinamico" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;dashed=1;strokeColor=#6c8ebf;" edge="1" parent="1" source="pipeline" target="fastapi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ================= LEYENDA STRIDE ================= -->
+        <mxCell id="legend" value="LEYENDA STRIDE&#10;S = Spoofing (suplantacion)&#10;T = Tampering (manipulacion)&#10;R = Repudiation (repudio)&#10;I = Information Disclosure (fuga de info)&#10;D = Denial of Service (denegacion)&#10;E = Elevation of Privilege (elevacion)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;spacingLeft=8;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="770" width="300" height="150" as="geometry" />
+        </mxCell>
+
+        <!-- ================= TABLA DE AMENAZAS Y MITIGACIONES ================= -->
+        <mxCell id="threats" value="AMENAZAS PRINCIPALES Y MITIGACIONES&#10;&#10;1) FastAPI /admin/status  [I, E]  - Broken Access Control (OWASP A01).&#10;   Mitigacion (objetivo): autenticacion/autorizacion. HALLAZGO ACADEMICO INTENCIONAL.&#10;&#10;2) Cliente -&gt; FastAPI  [S, T, I, D]  - sin auth, input no confiable, sin rate-limit.&#10;   Mitigacion: validacion Pydantic (T) + cabeceras de seguridad (I) [IMPLEMENTADO];&#10;   auth + rate-limit (objetivo).&#10;&#10;3) FastAPI -&gt; Memoria  [T, R, I]  - datos volatiles, sin logging de auditoria.&#10;   Mitigacion: logging/auditoria y persistencia (objetivo: PostgreSQL en produccion).&#10;&#10;4) Dev -&gt; Repo  [S, T, R]  - commits no firmados, identidad suplantable.&#10;   Mitigacion: commits firmados, branch protection, revision de PR.&#10;&#10;5) Imagen Docker  [T, I]  - CVEs del SO base y dependencias.&#10;   Mitigacion: usuario no-root + apt upgrade + Trivy image [IMPLEMENTADO].&#10;&#10;6) Reportes -&gt; DefectDojo  [T, I]  - manipulacion/fuga de evidencia.&#10;   Mitigacion: artifacts con retencion, canal e importacion controlados." style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#ffffff;strokeColor=#666666;fontSize=11;spacingLeft=8;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="900" y="470" width="660" height="450" as="geometry" />
+        </mxCell>
+
+        <!-- Nota Gitleaks/SAST/SCA controles -->
+        <mxCell id="controls" value="CONTROLES DEVSECOPS (shift-left) sobre el flujo:&#10;Gitleaks (secretos) . Semgrep (SAST) . Trivy FS (SCA) .&#10;Trivy Image (contenedor) . OWASP ZAP (DAST) . pytest (tests)" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;spacingLeft=8;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="360" y="400" width="440" height="70" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

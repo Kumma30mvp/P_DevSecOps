@@ -15,7 +15,7 @@ NOTA DE SEGURIDAD (intencional / academico):
 """
 import time
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, Request, status
 
 from app import storage
 from app.models import Item, ItemCreate
@@ -27,6 +27,35 @@ app = FastAPI(
 )
 
 _START_TIME = time.time()
+
+# Cabeceras de seguridad aplicadas a TODAS las respuestas.
+# Mitigan hallazgos tipicos del escaneo DAST (OWASP ZAP):
+#   - Anti-clickjacking (X-Frame-Options / CSP frame-ancestors)
+#   - X-Content-Type-Options (evita MIME sniffing)
+#   - Content-Security-Policy (reduce superficie XSS)
+# La CSP permite el CDN de Swagger para que /docs siga funcionando.
+_SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+    "Content-Security-Policy": (
+        "default-src 'self'; "
+        "img-src 'self' data: https://fastapi.tiangolo.com; "
+        "script-src 'self' https://cdn.jsdelivr.net; "
+        "style-src 'self' https://cdn.jsdelivr.net; "
+        "frame-ancestors 'none'"
+    ),
+}
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    """Inyecta cabeceras de seguridad en cada respuesta HTTP."""
+    response = await call_next(request)
+    for header, value in _SECURITY_HEADERS.items():
+        response.headers.setdefault(header, value)
+    return response
 
 
 @app.get("/", tags=["info"])
