@@ -4,6 +4,17 @@ name: DevSecOps Pipeline
 # Orientado a generar EVIDENCIA academica: cada job escribe en reports/ y sube
 # su salida como artifact descargable. Los jobs de seguridad usan
 # continue-on-error para recolectar hallazgos sin abortar el pipeline.
+#
+# ORDEN LOGICO (requerido por revision docente):
+#   1. Validate
+#   2. Build image
+#   3. Secret Scan (Gitleaks)   -\
+#   4. SCA Scan (Trivy FS)       |- controles de seguridad
+#   5. SAST Scan (Semgrep)       |
+#   6. Container Scan (Trivy)    |
+#   7. DAST Scan (OWASP ZAP)   -/
+#   8. Test  (pytest, tras validar la seguridad)
+#   9. Security Summary (consolida evidencia)
 
 on:
   push:
@@ -11,9 +22,11 @@ on:
   pull_request:
     branches: [main]
 
+# Principio de minimo privilegio: por defecto solo lectura del repo.
 permissions:
   contents: read
 
+# Evita runs solapados sobre la misma ref (ahorra minutos de runner).
 concurrency:
   group: devsecops-${{ github.ref }}
   cancel-in-progress: true
@@ -27,6 +40,7 @@ jobs:
   validate:
     name: 1 - Validate
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -34,6 +48,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
 
       - name: Install dependencies
         run: |
@@ -46,42 +61,12 @@ jobs:
       - name: Import app
         run: python -c "import app.main; print('app.main importado OK')"
 
-  # 2) TEST - unit tests con pytest (unico gate duro)
-  test:
-    name: 2 - Test
+  # 2) BUILD - construye la imagen y la exporta como artifact (para reusar en scans)
+  build:
+    name: 2 - Build image
     runs-on: ubuntu-latest
     needs: validate
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run pytest
-        run: |
-          mkdir -p reports
-          pytest -v --junitxml=reports/pytest-report.xml | tee reports/pytest-output.txt
-
-      - name: Upload test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: report-test
-          path: reports/
-          if-no-files-found: warn
-
-  # 3) BUILD - construye la imagen y la exporta como artifact (para reusar en scans)
-  build:
-    name: 3 - Build image
-    runs-on: ubuntu-latest
-    needs: test
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -98,11 +83,12 @@ jobs:
           path: image.tar
           retention-days: 1
 
-  # 4) SECRET SCAN - Gitleaks
+  # 3) SECRET SCAN - Gitleaks
   secret-scan:
-    name: 4 - Secret scan (Gitleaks)
+    name: 3 - Secret scan (Gitleaks)
     runs-on: ubuntu-latest
     needs: validate
+    timeout-minutes: 10
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -127,11 +113,12 @@ jobs:
           path: reports/gitleaks-report.json
           if-no-files-found: warn
 
-  # 5) SCA SCAN - Trivy filesystem (dependencias y codigo)
+  # 4) SCA SCAN - Trivy filesystem (dependencias y codigo)
   sca-scan:
-    name: 5 - SCA scan (Trivy fs)
+    name: 4 - SCA scan (Trivy fs)
     runs-on: ubuntu-latest
     needs: validate
+    timeout-minutes: 15
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -157,11 +144,12 @@ jobs:
           path: reports/trivy-fs-report.json
           if-no-files-found: warn
 
-  # 6) SAST SCAN - Semgrep (SARIF + JSON)
+  # 5) SAST SCAN - Semgrep (SARIF + JSON)
   sast-scan:
-    name: 6 - SAST scan (Semgrep)
+    name: 5 - SAST scan (Semgrep)
     runs-on: ubuntu-latest
     needs: validate
+    timeout-minutes: 15
     continue-on-error: true
     container:
       image: semgrep/semgrep:latest
@@ -189,11 +177,12 @@ jobs:
             reports/semgrep-report.json
           if-no-files-found: warn
 
-  # 7) CONTAINER SCAN - Trivy image (sobre la imagen construida)
+  # 6) CONTAINER SCAN - Trivy image (sobre la imagen construida)
   container-scan:
-    name: 7 - Container scan (Trivy image)
+    name: 6 - Container scan (Trivy image)
     runs-on: ubuntu-latest
     needs: build
+    timeout-minutes: 15
     continue-on-error: true
     steps:
       - name: Download image artifact
@@ -225,11 +214,12 @@ jobs:
           path: reports/trivy-image-report.json
           if-no-files-found: warn
 
-  # 8) DAST SCAN - levanta la app y corre OWASP ZAP Baseline
+  # 7) DAST SCAN - levanta la app y corre OWASP ZAP Baseline
   dast-scan:
-    name: 8 - DAST scan (OWASP ZAP)
+    name: 7 - DAST scan (OWASP ZAP)
     runs-on: ubuntu-latest
     needs: build
+    timeout-minutes: 20
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -269,6 +259,7 @@ jobs:
             -t http://localhost:8000 \
             -J reports/zap-report.json \
             -r reports/zap-report.html \
+            -x reports/zap-report.xml \
             -c .zap/rules.tsv \
             -I || true
           sudo chmod -R a+rX reports || true
@@ -285,14 +276,53 @@ jobs:
           path: |
             reports/zap-report.html
             reports/zap-report.json
+            reports/zap-report.xml
           if-no-files-found: warn
 
-  # 9 + 10) UPLOAD-ARTIFACTS consolidado + SECURITY SUMMARY
+  # 8) TEST - unit tests con pytest (se ejecuta DESPUES de validar la seguridad)
+  test:
+    name: 8 - Test
+    runs-on: ubuntu-latest
+    # Corre tras los controles de seguridad. if: always() garantiza que los
+    # hallazgos de seguridad (informativos, con continue-on-error) no impidan
+    # ejecutar los tests; pytest sigue siendo el gate real que puede fallar.
+    needs: [secret-scan, sca-scan, sast-scan, container-scan, dast-scan]
+    if: always()
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run pytest
+        run: |
+          mkdir -p reports
+          pytest -v --junitxml=reports/pytest-report.xml | tee reports/pytest-output.txt
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-test
+          path: reports/
+          if-no-files-found: warn
+
+  # 9) SECURITY SUMMARY - consolida todos los reportes y genera el resumen
   security-summary:
-    name: 9-10 - Security summary
+    name: 9 - Security summary
     runs-on: ubuntu-latest
     needs: [test, secret-scan, sca-scan, sast-scan, container-scan, dast-scan]
     if: always()
+    timeout-minutes: 10
     steps:
       - name: Download all reports
         uses: actions/download-artifact@v4

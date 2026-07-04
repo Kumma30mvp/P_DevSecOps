@@ -69,3 +69,12 @@ def test_admin_status():
     body = resp.json()
     assert "uptime_seconds" in body
     assert "items_count" in body
+
+
+def test_security_headers():
+    """Verifica que el middleware inyecta las cabeceras de seguridad (mitigacion DAST)."""
+    resp = client.get("/health")
+    assert resp.headers.get("X-Content-Type-Options") == "nosniff"
+    assert resp.headers.get("X-Frame-Options") == "DENY"
+    assert "frame-ancestors 'none'" in resp.headers.get("Content-Security-Policy", "")
+    assert resp.headers.get("Referrer-Policy") == "no-referrer"

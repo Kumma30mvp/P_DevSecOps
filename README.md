@@ -7,7 +7,7 @@ y para servir de insumo a un análisis **STRIDE** y a **DefectDojo**.
 
 - Almacenamiento **en memoria** (sin base de datos).
 - **Sin autenticación real** (decisión de MVP).
-- Validación de entradas con **Pydantic**.
+- Validación de entradas con **Pydantic**..
 
 ## Estructura
 
@@ -119,7 +119,26 @@ docker compose up --build
 ## Notas para el pipeline DevSecOps
 
 - **SCA:** dependencias con versiones fijadas en `requirements.txt`.
-- **Container scanning:** imagen `python:3.12-slim`, usuario no-root, `.dockerignore`.
+- **Container scanning:** imagen `python:3.12-slim`, `apt-get upgrade`, usuario no-root, `.dockerignore`.
 - **DAST:** OpenAPI en `/openapi.json` para alimentar OWASP ZAP / similar.
+- **Cabeceras de seguridad:** middleware que añade CSP, `X-Frame-Options`, `X-Content-Type-Options`, etc. (mitiga hallazgos DAST).
 - **SAST / revisión manual:** `/admin/status` como hallazgo de control de acceso.
 - **HEALTHCHECK** definido en el `Dockerfile` con `urllib` (Python puro, sin `curl`).
+
+### Orden del pipeline (`.github/workflows/devsecops-pipeline.yml`)
+
+`Validate → Build → Gitleaks → Trivy FS → Semgrep → Trivy Image → OWASP ZAP → Test → Security Summary`.
+Los tests corren **después** de los controles de seguridad; los jobs de seguridad usan
+`continue-on-error` (informativos) y `pytest` es el gate real.
+
+## Documentación del proyecto
+
+- [docs/INFORME_FINAL.md](docs/INFORME_FINAL.md) — informe técnico completo con referencias APA 7.
+- [docs/stride.drawio](docs/stride.drawio) — modelo de amenazas STRIDE (editable en draw.io).
+
+## Arquitectura (nota importante)
+
+El MVP usa **almacenamiento en memoria** (sin base de datos). **PostgreSQL no está
+implementado**; se documenta únicamente como arquitectura objetivo para producción
+(ver *Trabajo futuro* en el informe). El proyecto prioriza el pipeline DevSecOps por
+encima de la persistencia de datos.

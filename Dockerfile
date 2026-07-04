@@ -3,9 +3,17 @@ FROM python:3.12-slim
 
 # Buenas practicas de runtime de Python
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
+
+# Actualiza los paquetes del SO base para reducir CVEs del sistema operativo
+# detectados por Trivy image (mitigacion de container scanning).
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Instalar dependencias primero (mejor uso de cache de capas)
 COPY requirements.txt .
